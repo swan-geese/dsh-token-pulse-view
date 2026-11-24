@@ -1,0 +1,9 @@
+[
+  {
+    "name": "dsh-token-pulse-view",
+    "url": "https://github.com/swan-geese/dsh-token-pulse-view/releases/download/v1.0.0/dsh-token-pulse-view-1.0.0.tgz",
+    "description": "Token 用量仪表盘会话视图：逐轮流动图 / 缓存命中 / 上下文仪表 / 模型归因，数据与计费同源",
+    "category": "ui",
+    "deps": []
+  }
+]

@@ -67,6 +67,28 @@ This is a `#dsh-plugin`. Two ways:
 Enable/disable lives in the **Plugins** list; turning the plugin off removes the
 view and the projection unit.
 
+## Self-hosted marketplace index (instant, no search lag)
+
+GitHub's topic search is what Plugin Hub mirrors automatically, but the index
+can take minutes-to-hours to catch a fresh repo. This repository also ships a
+[DPMIDX](docs/market-index-format.md) file for Hub's custom-index sources —
+zero sync lag:
+
+```
+https://raw.githubusercontent.com/swan-geese/dsh-token-pulse-view/main/dist/token-pulse.dpmidx
+```
+
+Add it under **Plugins → Plugin Hub → 设置 → 目录源 / list sources**. Regenerate
+after any version bump:
+
+```bash
+node ~/.dsh/profiles/desktop/node_modules/dsh-plugin-hub/scripts/build-market-index.mjs \
+  dist/market-entry.json dist/token-pulse.dpmidx
+```
+
+(`market-entry.json`'s `url` points at the v1.0.0 release asset; bump the tag
+in that URL when you release a new version.)
+
 ## Layout
 
 ```
