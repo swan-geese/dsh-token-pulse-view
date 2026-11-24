@@ -245,7 +245,7 @@ function applyEvent(state, event) {
       const open = state.openStep
       const matches = open !== null && open.turn === data.turn && open.step === data.step
       const stream = Array.isArray(data.stream) ? data.stream : []
-      const firstToken = matches
+      const firstOut = matches
         ? open.firstTokenTime ?? firstTokenTimeOf(stream)
         : null
       const usageRecord = data.usage ?? lastUsageChunk(stream)?.usage
@@ -258,8 +258,8 @@ function applyEvent(state, event) {
           data.turn,
           data.step,
           Math.max(0, event.time - open.startTime),
-          firstToken === null ? null : Math.max(0, firstToken - open.startTime),
-          firstToken === null ? null : Math.max(0, event.time - firstToken),
+          firstOut === null ? null : Math.max(0, firstOut - open.startTime),
+          firstOut === null ? null : Math.max(0, event.time - firstOut),
           buckets?.output ?? 0,
         )
       }
