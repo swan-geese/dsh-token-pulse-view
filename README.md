@@ -1,5 +1,7 @@
 # dsh-token-pulse-view
 
+中文说明：[README.zh.md](README.zh.md)
+
 **Token Pulse — a token-usage dashboard for DeepSeek Harness (DSH).**
 
 A Conversation View plugin that turns a session's model accounting into a real
