@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="300" viewBox="0 0 640 300" role="img" aria-label="A token usage dashboard: four glass KPI cards with sparklines, a stacked per-turn bar chart with a hover tooltip, a context donut gauge, model attribution bars, and a three-segment timing strip.">
+  <defs>
+    <linearGradient id="pulseBg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f6f7fb"/>
+      <stop offset="1" stop-color="#eef0f6"/>
+    </linearGradient>
+    <linearGradient id="kpiEdge" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4d6bfe"/>
+      <stop offset="1" stop-color="#4d6bfe" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="modelFill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4d6bfe"/>
+      <stop offset="1" stop-color="#1f9d63"/>
+    </linearGradient>
+    <filter id="cardShadow" x="-10%" y="-20%" width="120%" height="150%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="2.4" flood-color="#25305a" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+
+  <!-- app backdrop -->
+  <rect width="640" height="300" rx="14" fill="url(#pulseBg)"/>
+  <ellipse cx="530" cy="0" rx="240" ry="70" fill="#4d6bfe" opacity="0.07"/>
+
+  <!-- view tab row -->
+  <rect x="24" y="18" width="70" height="20" rx="10" fill="#c9d2e6" opacity="0.5"/>
+  <rect x="102" y="18" width="98" height="20" rx="10" fill="#4d6bfe"/>
+  <text x="151" y="32" font-family="sans-serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">Token 用量</text>
+  <rect x="208" y="18" width="64" height="20" rx="10" fill="#c9d2e6" opacity="0.5"/>
+
+  <!-- hero title -->
+  <text x="24" y="62" font-family="sans-serif" font-size="14" font-weight="700" fill="#22293c">会话 Token 面板</text>
+  <text x="150" y="62" font-family="sans-serif" font-size="9" fill="#8a93a6">数值与计费用量同源</text>
+
+  <!-- KPI cards -->
+  <g filter="url(#cardShadow)">
+    <rect x="24" y="74" width="140" height="52" rx="9" fill="#ffffff"/>
+    <rect x="24" y="74" width="140" height="2.4" rx="1.2" fill="url(#kpiEdge)"/>
+    <rect x="168" y="74" width="140" height="52" rx="9" fill="#ffffff"/>
+    <rect x="168" y="74" width="140" height="2.4" rx="1.2" fill="#1f9d63" opacity="0.75"/>
+    <rect x="312" y="74" width="140" height="52" rx="9" fill="#ffffff"/>
+    <rect x="312" y="74" width="140" height="2.4" rx="1.2" fill="#e6a23c" opacity="0.75"/>
+    <rect x="456" y="74" width="160" height="52" rx="9" fill="#ffffff"/>
+    <rect x="456" y="74" width="160" height="2.4" rx="1.2" fill="#6a5acd" opacity="0.75"/>
+  </g>
+  <g font-family="sans-serif" fill="#8a93a6" font-size="8">
+    <text x="34" y="90">总消耗</text>
+    <text x="178" y="90">输出</text>
+    <text x="322" y="90">缓存命中</text>
+    <text x="466" y="90">生成速度</text>
+  </g>
+  <g font-family="sans-serif" fill="#22293c" font-size="16" font-weight="700">
+    <text x="34" y="112">2.4M</text>
+    <text x="178" y="112">318K</text>
+    <text x="322" y="112">91.3%</text>
+    <text x="466" y="112">46 <tspan font-size="9" font-weight="500" fill="#8a93a6">tok/s</tspan></text>
+  </g>
+  <!-- sparklines -->
+  <polyline points="96,118 106,110 116,114 126,102 136,108 146,96 156,100" fill="none" stroke="#4d6bfe" stroke-width="1.2" opacity="0.6"/>
+  <polyline points="240,116 250,108 260,112 270,104 280,106 290,100" fill="none" stroke="#1f9d63" stroke-width="1.2" opacity="0.6"/>
+  <polyline points="384,108 394,104 404,110 414,102 424,104 434,100 444,102" fill="none" stroke="#e6a23c" stroke-width="1.2" opacity="0.6"/>
+
+  <!-- main flow chart -->
+  <g filter="url(#cardShadow)">
+    <rect x="24" y="136" width="366" height="140" rx="9" fill="#ffffff"/>
+  </g>
+  <text x="36" y="154" font-family="sans-serif" font-size="10" font-weight="600" fill="#22293c">逐轮 Token 流动</text>
+  <g font-family="sans-serif" font-size="8">
+    <rect x="240" y="146" width="38" height="14" rx="7" fill="#eef1f8"/>
+    <rect x="281" y="146" width="38" height="14" rx="7" fill="#4d6bfe"/>
+    <rect x="322" y="146" width="52" height="14" rx="7" fill="#eef1f8"/>
+    <text x="259" y="156" fill="#8a93a6" text-anchor="middle">近20</text>
+    <text x="300" y="156" fill="#ffffff" text-anchor="middle">近50</text>
+    <text x="348" y="156" fill="#8a93a6" text-anchor="middle">全部</text>
+  </g>
+  <!-- stacked bars: input (blue base), cache (green), write (amber), output (violet) -->
+  <g>
+    <g transform="translate(40,0)">
+      <rect x="0"   y="248" width="12" height="14" rx="2" fill="#4d6bfe"/><rect x="0"   y="243" width="12" height="4" rx="1.5" fill="#1f9d63"/><rect x="0"   y="239" width="12" height="3.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="18"  y="236" width="12" height="26" rx="2" fill="#4d6bfe"/><rect x="18"  y="229" width="12" height="6" rx="1.5" fill="#1f9d63"/><rect x="18"  y="224" width="12" height="4.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="36"  y="222" width="12" height="40" rx="2" fill="#4d6bfe"/><rect x="36"  y="214" width="12" height="7" rx="1.5" fill="#1f9d63"/><rect x="36"  y="208" width="12" height="5.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="54"  y="232" width="12" height="30" rx="2" fill="#4d6bfe"/><rect x="54"  y="226" width="12" height="5" rx="1.5" fill="#1f9d63"/><rect x="54"  y="221" width="12" height="4.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="72"  y="205" width="12" height="57" rx="2" fill="#4d6bfe"/><rect x="72"  y="195" width="12" height="9" rx="1.5" fill="#1f9d63"/><rect x="72"  y="188" width="12" height="6.4" rx="1.5" fill="#e6a23c"/><rect x="72"  y="182" width="12" height="5.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="90"  y="198" width="12" height="64" rx="2" fill="#4d6bfe"/><rect x="90"  y="187" width="12" height="10" rx="1.5" fill="#1f9d63"/><rect x="90"  y="180" width="12" height="6.4" rx="1.5" fill="#e6a23c"/><rect x="90"  y="174" width="12" height="5.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="108" y="212" width="12" height="50" rx="2" fill="#4d6bfe"/><rect x="108" y="203" width="12" height="8" rx="1.5" fill="#1f9d63"/><rect x="108" y="197" width="12" height="5.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="126" y="188" width="12" height="74" rx="2" fill="#4d6bfe"/><rect x="126" y="176" width="12" height="11" rx="1.5" fill="#1f9d63"/><rect x="126" y="168" width="12" height="7" rx="1.5" fill="#e6a23c"/><rect x="126" y="161" width="12" height="6.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="144" y="180" width="12" height="82" rx="2" fill="#4d6bfe"/><rect x="144" y="166" width="12" height="13" rx="1.5" fill="#1f9d63"/><rect x="144" y="158" width="12" height="7.4" rx="1.5" fill="#e6a23c"/><rect x="144" y="151" width="12" height="6.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="162" y="196" width="12" height="66" rx="2" fill="#4d6bfe"/><rect x="162" y="184" width="12" height="11" rx="1.5" fill="#1f9d63"/><rect x="162" y="177" width="12" height="6.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="180" y="208" width="12" height="54" rx="2" fill="#4d6bfe"/><rect x="180" y="199" width="12" height="8" rx="1.5" fill="#1f9d63"/><rect x="180" y="193" width="12" height="5.4" rx="1.5" fill="#6a5acd"/>
+      <rect x="198" y="222" width="12" height="40" rx="2" fill="#4d6bfe"/><rect x="198" y="215" width="12" height="6" rx="1.5" fill="#1f9d63"/><rect x="198" y="210" width="12" height="4.4" rx="1.5" fill="#6a5acd"/>
+    </g>
+    <!-- hovered bar highlight + tooltip -->
+    <rect x="222" y="146" width="20" height="116" rx="4" fill="#22293c" opacity="0.05"/>
+    <g filter="url(#cardShadow)">
+      <rect x="196" y="164" width="150" height="86" rx="7" fill="#20263a" opacity="0.96"/>
+    </g>
+    <g font-family="sans-serif" font-size="8" fill="#c8cede">
+      <text x="206" y="180" fill="#ffffff" font-weight="600">第 15 轮 · 合计 104,232</text>
+      <text x="206" y="195">未缓存输入</text><text x="336" y="195" text-anchor="end" fill="#ffffff">86,104</text>
+      <text x="206" y="208">缓存读</text><text x="336" y="208" text-anchor="end" fill="#ffffff">14,028</text>
+      <text x="206" y="221">输出</text><text x="336" y="221" text-anchor="end" fill="#ffffff">4,100</text>
+      <text x="206" y="234">首 token 1.9 秒 · 42 tok/s</text>
+      <text x="206" y="245" fill="#8a93a6">deepseek/deepseek-chat</text>
+    </g>
+    <line x1="40" y1="262" x2="374" y2="262" stroke="#dfe4ef" stroke-width="1"/>
+    <g font-family="sans-serif" font-size="7.5" fill="#8a93a6">
+      <text x="40" y="272">#3</text>
+      <text x="205" y="272" text-anchor="middle">112K · 总消耗</text>
+      <text x="374" y="272" text-anchor="end">#15</text>
+    </g>
+  </g>
+
+  <!-- right column: gauge + models + timing -->
+  <g filter="url(#cardShadow)">
+    <rect x="400" y="136" width="216" height="76" rx="9" fill="#ffffff"/>
+    <rect x="400" y="220" width="216" height="56" rx="9" fill="#ffffff"/>
+  </g>
+  <text x="412" y="152" font-family="sans-serif" font-size="9" font-weight="600" fill="#22293c">上下文占用</text>
+  <circle cx="440" cy="180" r="20" fill="none" stroke="#e5e9f2" stroke-width="6"/>
+  <circle cx="440" cy="180" r="20" fill="none" stroke="#4d6bfe" stroke-width="6" stroke-linecap="round"
+          stroke-dasharray="86.7 100.5" transform="rotate(-90 440 180)"/>
+  <text x="440" y="184" font-family="sans-serif" font-size="10" font-weight="700" fill="#22293c" text-anchor="middle">86%</text>
+  <g font-family="sans-serif" font-size="7.5">
+    <rect x="478" y="164" width="126" height="7" rx="3.5" fill="#4d6bfe"/>
+    <rect x="478" y="174" width="56" height="7" rx="3.5" fill="#1f9d63"/>
+    <rect x="536" y="174" width="34" height="7" rx="3.5" fill="#e6a23c"/>
+    <text x="478" y="192" fill="#8a93a6">系统 92K · 工具 41K · 消息 25K</text>
+  </g>
+
+  <text x="412" y="234" font-family="sans-serif" font-size="9" font-weight="600" fill="#22293c">模型归因</text>
+  <g font-family="sans-serif" font-size="7.5" fill="#8a93a6">
+    <text x="412" y="250" fill="#22293c">deepseek-chat</text><text x="608" y="250" text-anchor="end">2.1M · 128 次</text>
+    <rect x="412" y="254" width="196" height="4" rx="2" fill="#eef1f8"/>
+    <rect x="412" y="254" width="168" height="4" rx="2" fill="url(#modelFill)"/>
+    <text x="412" y="268" fill="#22293c">kimi-k2</text><text x="608" y="268" text-anchor="end">298K · 22 次</text>
+    <rect x="412" y="271" width="196" height="4" rx="2" fill="#eef1f8"/>
+    <rect x="412" y="271" width="52" height="4" rx="2" fill="url(#modelFill)" opacity="0.75"/>
+  </g>
+
+  <!-- timing strip -->
+  <g filter="url(#cardShadow)">
+    <rect x="400" y="284" width="216" height="0" rx="0" fill="none"/>
+  </g>
+  <rect x="400" y="284" width="216" height="8" rx="4" fill="none"/>
+  <g transform="translate(400,283)">
+    <rect x="0" y="0" width="216" height="8" rx="4" fill="#e5e9f2"/>
+    <rect x="0" y="0" width="96" height="8" rx="4" fill="#6a5acd" opacity="0.85"/>
+    <rect x="96" y="0" width="58" height="8" fill="#1f9d63" opacity="0.85"/>
+    <text x="0" y="-4" font-family="sans-serif" font-size="7.5" fill="#8a93a6">模型 18m · 工具 11m · 间隔 14m</text>
+  </g>
+
+  <!-- legend -->
+  <g font-family="sans-serif" font-size="7.5" fill="#8a93a6" transform="translate(40,284)">
+    <rect x="0" y="0" width="7" height="7" rx="2" fill="#4d6bfe"/><text x="11" y="6">输入</text>
+    <rect x="42" y="0" width="7" height="7" rx="2" fill="#1f9d63"/><text x="53" y="6">缓存读</text>
+    <rect x="92" y="0" width="7" height="7" rx="2" fill="#e6a23c"/><text x="103" y="6">缓存写</text>
+    <rect x="142" y="0" width="7" height="7" rx="2" fill="#6a5acd"/><text x="153" y="6">输出</text>
+  </g>
+</svg>
