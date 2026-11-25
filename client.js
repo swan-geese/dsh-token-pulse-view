@@ -73,6 +73,27 @@ window.__ModuleLoader__.load({
       'tooltip.reasoning': '其中推理',
       'tooltip.speed': '{tps} tok/s',
       'note': '数据随会话持久化；切换视图或重新打开都会完整还原。',
+      'scope.session': '本会话',
+      'scope.window': '近 {n} 天 · 全部会话',
+      'scope.days7': '近 7 天',
+      'scope.days30': '近 30 天',
+      'scope.days90': '近 90 天',
+      'cross.subtitle': '扫描持久会话档案聚合，与计费同源；30 秒缓存',
+      'cross.loading': '正在扫描本机会话档案…',
+      'cross.error': '统计接口不可用（需重启 dsh 加载新版插件）',
+      'cross.retry': '重试',
+      'cross.requests': '计费请求',
+      'cross.tokens': 'Tokens 合计',
+      'cross.sessions': '有计费用量的会话',
+      'cross.partial': '档案较大，本次扫描未覆盖全部会话（部分统计）',
+      'cross.byday': '按天用量',
+      'cross.bymodel': '按模型用量',
+      'cross.top': '消耗最高的会话',
+      'cross.top.hint': '点击行左侧图标查看路径',
+      'cross.day.input': '输入 {value}',
+      'cross.day.cache': '缓存读 {value}',
+      'cross.day.output': '输出 {value}',
+      'cross.empty': '所选窗口内没有计费请求',
       'number.groupSeparator': ',',
       'number.thousand': '{value}K',
       'number.million': '{value}M',
@@ -139,6 +160,27 @@ window.__ModuleLoader__.load({
       'tooltip.reasoning': 'of which reasoning',
       'tooltip.speed': '{tps} tok/s',
       'note': 'State is session-derived; switching views or reopening restores everything.',
+      'scope.session': 'This session',
+      'scope.window': 'Last {n} days · all sessions',
+      'scope.days7': 'Last 7 days',
+      'scope.days30': 'Last 30 days',
+      'scope.days90': 'Last 90 days',
+      'cross.subtitle': 'Aggregated from the durable session archive; billing-grade, cached 30 s',
+      'cross.loading': 'Scanning the local session archive…',
+      'cross.error': 'Stats route unavailable (restart DSH to load the new plugin build)',
+      'cross.retry': 'Retry',
+      'cross.requests': 'Billed requests',
+      'cross.tokens': 'Total tokens',
+      'cross.sessions': 'Sessions with billing',
+      'cross.partial': 'Large archive: this scan did not cover every session (partial)',
+      'cross.byday': 'Usage by day',
+      'cross.bymodel': 'Usage by model',
+      'cross.top': 'Top sessions by spend',
+      'cross.top.hint': 'Hover a row for its path',
+      'cross.day.input': 'input {value}',
+      'cross.day.cache': 'cache read {value}',
+      'cross.day.output': 'output {value}',
+      'cross.empty': 'No billed requests in the selected window',
       'number.groupSeparator': ',',
       'number.thousand': '{value}K',
       'number.million': '{value}M',
@@ -178,6 +220,8 @@ window.__ModuleLoader__.load({
     }
 
     const SERIES_WINDOWS = [20, 50, 0]
+    /** Cross-session day windows; 0 = this-session scope. */
+    const SCOPES = [0, 7, 30, 90]
 
     /** Palette: chart artwork hues; every chrome color still comes from tokens. */
     const SEGMENTS = [
@@ -315,6 +359,38 @@ window.__ModuleLoader__.load({
 .dsh-pulse__empty { padding: 48px 24px; text-align: center; display: flex; flex-direction: column; gap: 8px; align-items: center; }
 .dsh-pulse__emptyTitle { font: var(--dsw-font-s-strong-14); }
 .dsh-pulse__emptyBody { max-width: 420px; font: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary); line-height: 1.6; }
+.dsh-pulse__scope { display: flex; gap: 3px; padding: 2px; border: 0.5px solid var(--dsw-alias-border-l2); border-radius: 999px; }
+.dsh-pulse__scopeButton {
+  appearance: none; border: 0; background: transparent; cursor: pointer;
+  border-radius: 999px; padding: 3px 12px;
+  font: var(--dsw-font-xxs-12); color: var(--dsw-alias-label-secondary);
+  transition: background 140ms ease, color 140ms ease;
+}
+.dsh-pulse__scopeButton[data-active='true'] {
+  background: var(--dsw-alias-button-ghost-active-fill); color: var(--dsw-alias-label-primary); font-weight: 600;
+}
+.dsh-pulse__scopeButton:focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: 1px; }
+.dsh-pulse__cross { display: flex; flex-direction: column; gap: 12px; }
+.dsh-pulse__crossKpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.dsh-pulse__dayBars { display: flex; align-items: flex-end; gap: 4px; height: 150px; }
+.dsh-pulse__dayBar { flex: 1 1 0; min-width: 3px; height: 100%; display: flex; flex-direction: column; justify-content: flex-end; gap: 1px; border-radius: 3px; }
+.dsh-pulse__dayBar:hover { background: color-mix(in srgb, var(--dsw-alias-label-primary) 6%, transparent); }
+.dsh-pulse__dayLabels { display: flex; justify-content: space-between; font: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-tertiary); }
+.dsh-pulse__modelRow { display: grid; grid-template-columns: minmax(0, 1.2fr) 54px 74px 74px minmax(90px, 1fr); gap: 10px; align-items: center; padding: 5px 0; border-top: 0.5px solid var(--dsw-alias-border-l1); font: var(--dsw-font-xxs-12); }
+.dsh-pulse__modelRow:first-child { border-top: 0; }
+.dsh-pulse__modelRowName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.dsh-pulse__modelRowNum { text-align: right; font-variant-numeric: tabular-nums; color: var(--dsw-alias-label-secondary); }
+.dsh-pulse__modelRowBar { height: 7px; border-radius: 999px; overflow: hidden; background: color-mix(in srgb, var(--dsw-alias-border-l2) 70%, transparent); }
+.dsh-pulse__modelRowFill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--pulse-c-input), var(--pulse-c-output)); }
+.dsh-pulse__headRow { display: grid; grid-template-columns: minmax(0, 1.2fr) 54px 74px 74px minmax(90px, 1fr); gap: 10px; font: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-tertiary); }
+.dsh-pulse__topRow { display: grid; grid-template-columns: minmax(0, 1.4fr) 84px 1fr; gap: 10px; align-items: center; padding: 4px 0; border-top: 0.5px solid var(--dsw-alias-border-l1); font: var(--dsw-font-xxs-12); }
+.dsh-pulse__topRow > b { text-align: right; font-weight: 500; font-variant-numeric: tabular-nums; }
+.dsh-pulse__topName { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-primary); }
+.dsh-pulse__topCwd { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--dsw-alias-label-tertiary); font-size: 11px; }
+.dsh-pulse__badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font: var(--dsw-font-xxxs-11); background: color-mix(in srgb, var(--dsw-alias-state-warn-primary) 18%, transparent); color: var(--dsw-alias-state-warn-primary); }
+.dsh-pulse__crossState { padding: 40px 0; text-align: center; font: var(--dsw-font-xs-13); color: var(--dsw-alias-label-tertiary); }
+.dsh-pulse__crossState button { margin-left: 10px; }
+@media (width <= 1000px) { .dsh-pulse__crossKpis { grid-template-columns: repeat(2, 1fr); } }
 .dsh-pulse__note { text-align: center; font: var(--dsw-font-xxxs-11); color: var(--dsw-alias-label-tertiary); margin: 0; }
 .dsh-pulse__windowButton:focus-visible { outline: 2px solid var(--dsw-alias-state-business-primary); outline-offset: 1px; }
 @media (prefers-reduced-motion: reduce) {
@@ -554,6 +630,106 @@ window.__ModuleLoader__.load({
     }
 
     /**
+     * Cross-session panel: fetches the host's read-only aggregate route and
+     * renders the DeepSeek-console-style window (KPIs, per-day bars, per-model
+     * table, top sessions).
+     */
+    function CrossPanel(props) {
+      const { days, t } = props
+      const [state, setState] = React.useState({ phase: 'loading', data: null, error: null })
+      const [nonce, setNonce] = React.useState(0)
+      React.useEffect(() => {
+        let alive = true
+        setState({ phase: 'loading', data: null, error: null })
+        fetch(`/token-pulse/stats?days=${days}`, { credentials: 'same-origin' })
+          .then(response => response.ok ? response.json() : Promise.reject(new Error(`http ${response.status}`)))
+          .then(body => { if (alive) setState(body && body.ok ? { phase: 'ready', data: body, error: null } : { phase: 'error', data: null, error: (body && body.error) || 'unavailable' }) })
+          .catch(error => { if (alive) setState({ phase: 'error', data: null, error: String(error?.message ?? error) }) })
+        return () => { alive = false }
+      }, [days, nonce])
+      if (state.phase === 'loading') {
+        return h('div', { className: 'dsh-pulse__card dsh-pulse__panel' },
+          h('div', { className: 'dsh-pulse__crossState' }, t('cross.loading')))
+      }
+      if (state.phase === 'error') {
+        return h('div', { className: 'dsh-pulse__card dsh-pulse__panel' },
+          h('div', { className: 'dsh-pulse__crossState' },
+            t('cross.error'), ' · ', String(state.error ?? ''),
+            h('button', { type: 'button', className: 'dsh-pulse__windowButton', onClick: () => { setNonce(v => v + 1) } }, t('cross.retry'))))
+      }
+      const data = state.data
+      const total = data.window.total
+      const dayRows = data.window.days
+      const grand = total.input + total.cacheRead + total.cacheWrite + total.output
+      const cacheShare = (total.input + total.cacheRead + total.cacheWrite) > 0
+        ? (total.cacheRead / (total.input + total.cacheRead + total.cacheWrite)) * 100
+        : null
+      const maxDay = Math.max(...dayRows.map(row => row.input + row.cacheRead + row.cacheWrite + row.output), 1)
+      const maxModel = Math.max(...data.models.map(row => row.input + row.cacheRead + row.cacheWrite + row.output), 1)
+      return h('div', { className: 'dsh-pulse__cross' },
+        h('div', { className: 'dsh-pulse__crossKpis' },
+          h(KpiCard, { label: t('cross.requests'), value: formatExact(total.requests, t), hint: t('scope.window', { n: days }), accent: 'var(--pulse-c-input)' }),
+          h(KpiCard, { label: t('cross.tokens'), value: formatTokens(grand, t), hint: `${t('legend.input')} ${formatTokens(total.input, t)} · ${t('legend.output')} ${formatTokens(total.output, t)}`, accent: 'var(--pulse-c-output)' }),
+          h(KpiCard, { label: t('kpi.cache'), value: cacheShare === null ? '—' : `${cacheShare.toFixed(cacheShare < 10 ? 1 : 0)}`, unit: '%', hint: `${formatTokens(total.cacheRead, t)} / ${formatTokens(total.input + total.cacheRead + total.cacheWrite, t)}`, accent: 'var(--pulse-c-cache)' }),
+          h(KpiCard, { label: t('cross.sessions'), value: String(data.sessions), hint: `${dayRows.length} × ${t('cross.byday')}`, accent: 'var(--pulse-c-write)' })),
+        data.partial ? h('div', { className: 'dsh-pulse__badge', style: { alignSelf: 'flex-start' } }, t('cross.partial')) : null,
+        h(Panel, { title: t('cross.byday'), hint: `${t('scope.window', { n: days })}${data.timezone ? ` · ${data.timezone}` : ''}` },
+          dayRows.length === 0
+            ? h('div', { className: 'dsh-pulse__panelHint' }, t('cross.empty'))
+            : h('div', { className: 'dsh-pulse__chart' },
+              h('div', { className: 'dsh-pulse__dayBars' },
+                dayRows.map(row => {
+                  const parts = [['input', row.input], ['cacheRead', row.cacheRead], ['output', row.output]]
+                  const rowTotal = row.input + row.cacheRead + row.cacheWrite + row.output
+                  return h('div', {
+                    key: row.day,
+                    className: 'dsh-pulse__bar',
+                    'aria-label': `${row.day}: ${formatTokens(rowTotal, t)}`,
+                    title: `${row.day} · ${t('cross.requests')} ${row.requests} · ${t('cross.day.input', { value: formatTokens(row.input, t) })} · ${t('cross.day.cache', { value: formatTokens(row.cacheRead, t) })} · ${t('cross.day.output', { value: formatTokens(row.output, t) })}`,
+                  }, parts.map(([key, value]) => value <= 0 ? null : h('div', {
+                    key,
+                    className: 'dsh-pulse__seg',
+                    'data-k': key,
+                    style: { height: `${Math.max(1.5, (value / maxDay) * 100).toFixed(2)}%` },
+                  })))
+                })),
+              h('div', { className: 'dsh-pulse__dayLabels' },
+                h('span', null, dayRows[0]?.day.slice(5) ?? ''),
+                h('span', null, `${formatTokens(maxDay, t)} · ${t('cross.tokens')}`),
+                h('span', null, dayRows.at(-1)?.day.slice(5) ?? '')))),
+        h(Panel, { title: t('cross.bymodel'), hint: t('section.models.hint') },
+          data.models.length === 0
+            ? h('div', { className: 'dsh-pulse__panelHint' }, t('cross.empty'))
+            : h('div', null,
+              h('div', { className: 'dsh-pulse__headRow' },
+                h('span', null, t('section.models')),
+                h('span', { style: { textAlign: 'right' } }, t('cross.requests')),
+                h('span', { style: { textAlign: 'right' } }, t('kpi.input')),
+                h('span', { style: { textAlign: 'right' } }, t('kpi.cache')),
+                h('span', null, t('model.share', { percent: '' }))),
+              data.models.map(row => {
+                const weight = row.input + row.cacheRead + row.cacheWrite + row.output
+                return h('div', { key: row.model, className: 'dsh-pulse__modelRow' },
+                  h('span', { className: 'dsh-pulse__modelRowName', title: row.model }, row.model),
+                  h('span', { className: 'dsh-pulse__modelRowNum' }, String(row.requests)),
+                  h('span', { className: 'dsh-pulse__modelRowNum' }, formatTokens(row.input, t)),
+                  h('span', { className: 'dsh-pulse__modelRowNum' }, formatTokens(row.cacheRead, t)),
+                  h('div', { className: 'dsh-pulse__modelRowBar', title: `${formatTokens(weight, t)} tok` },
+                    h('div', { className: 'dsh-pulse__modelRowFill', style: { width: `${(weight / maxModel * 100).toFixed(2)}%` } })))
+              }))),
+        (data.top?.length ?? 0) > 0
+          ? h(Panel, { title: t('cross.top'), hint: t('cross.top.hint') },
+            data.top.map(row => {
+              const weight = row.input + row.cacheRead + row.cacheWrite + row.output
+              return h('div', { key: row.id, className: 'dsh-pulse__topRow', title: row.cwd || row.id },
+                h('span', { className: 'dsh-pulse__topName' }, row.cwd ? row.cwd.split('/').slice(-2).join('/') : row.id),
+                h('span', { className: 'dsh-pulse__topCwd' }, `${row.requests} ${t('cross.requests')}`),
+                h('b', null, formatTokens(weight, t)))
+            }))
+          : null)
+    }
+
+    /**
      * The dashboard component bound to one session's projection seats.
      */
     function PulseView(props) {
@@ -566,11 +742,13 @@ window.__ModuleLoader__.load({
       const pulse = useProjection == null ? undefined : useProjection('tokenPulse')
 
       const [windowIndex, setWindowIndex] = React.useState(0)
+      const [scopeIndex, setScopeIndex] = React.useState(0)
+      const scope = SCOPES[scopeIndex]
       const series = pulse?.series ?? []
       const limit = SERIES_WINDOWS[windowIndex]
       const rows = limit === 0 ? series : series.slice(-limit)
 
-      if (usage.total === 0 && series.length === 0) {
+      if (scope === 0 && usage.total === 0 && series.length === 0) {
         return h('div', { className: 'dsh-pulse' },
           h('div', { className: 'dsh-pulse__inner' },
             h('div', { className: 'dsh-pulse__card dsh-pulse__empty' },
@@ -602,12 +780,36 @@ window.__ModuleLoader__.load({
       const gaugeColorInput = 'var(--pulse-c-input)'
       const gaugeColorOutput = 'var(--pulse-c-output)'
 
+      /** Scope segmented control shared by both render branches. */
+      const scopeSwitch = () => h('div', { className: 'dsh-pulse__scope', role: 'group', 'aria-label': t('scope.window', { n: 0 }) },
+        SCOPES.map((candidate, index) => h('button', {
+          key: candidate,
+          type: 'button',
+          className: 'dsh-pulse__scopeButton',
+          'aria-pressed': index === scopeIndex,
+          'data-active': index === scopeIndex ? 'true' : 'false',
+          onClick: () => { setScopeIndex(index) },
+        }, candidate === 0 ? t('scope.session') : t(`scope.days${candidate}`))))
+
+      if (scope !== 0) {
+        return h('div', { className: 'dsh-pulse' },
+          h('div', { className: 'dsh-pulse__inner' },
+            h('div', { className: 'dsh-pulse__hero' },
+              h('div', null,
+                h('div', { className: 'dsh-pulse__heroTitle' }, t('hero.title')),
+                h('div', { className: 'dsh-pulse__heroSub' }, t('cross.subtitle'))),
+              scopeSwitch()),
+            h(CrossPanel, { days: scope, t }),
+            h('p', { className: 'dsh-pulse__note' }, t('note'))))
+      }
+
       return h('div', { className: 'dsh-pulse' },
         h('div', { className: 'dsh-pulse__inner' },
           h('div', { className: 'dsh-pulse__hero' },
             h('div', null,
               h('div', { className: 'dsh-pulse__heroTitle' }, t('hero.title')),
-              h('div', { className: 'dsh-pulse__heroSub' }, t('hero.subtitle')))),
+              h('div', { className: 'dsh-pulse__heroSub' }, scope === 0 ? t('hero.subtitle') : t('cross.subtitle'))),
+            scopeSwitch()),
           h('div', { className: 'dsh-pulse__kpis' },
             h(KpiCard, {
               label: t('kpi.total'), value: formatTokens(billedTotal, t), hint: t('kpi.total.hint'),

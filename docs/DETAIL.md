@@ -11,6 +11,7 @@ A new **Token usage** tab joins the view row above the conversation. It turns th
 - **Context donut gauge**: the projected next-request occupancy ÷ the route window; beyond 80% it turns warning-colored and flags the compaction threshold. Beside it, an approximate system / tools / messages composition bar.
 - **Model attribution**: every `provider/model` ranked by billed weight with token totals, call counts, and share bars.
 - **Where the time went**: the session wall clock split into model time, tool time, and gaps, plus per-turn average, average TTFT, and session-span metrics.
+- **Cross-session scopes**: This session / Last 7 / 30 / 90 days. Day scopes read a read-only host route that aggregates the whole local session archive by calendar day and model — DeepSeek-console style — cached 30 s.
 
 ## Where the data comes from
 

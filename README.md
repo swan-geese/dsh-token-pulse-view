@@ -27,6 +27,15 @@ Pick **Token usage** in the view tab row above any conversation:
   token totals, call counts, and share bars.
 - **Where the time went** — the session wall clock split into model time, tool
   time, and gaps, alongside per-turn average, average TTFT, and session span.
+- **Cross-session scope (v1.1.0)** — a **This session / Last 7 / 30 / 90 days**
+  switch in the header. Day scopes read a read-only host route
+  (`GET /token-pulse/stats`) that aggregates every billed usage record in the
+  local session archive under the same billing rule as the projections, into
+  DeepSeek-console-style views: KPI cards (billed requests, total tokens,
+  cache-hit share, sessions with billing), stacked bars per local calendar
+  day, a per-model table, and the top-spending sessions. The scan is cached
+  30 s and wall-time capped, so a huge archive degrades to a `partial` flag
+  instead of hanging. Presentational and read-only: it writes nothing.
 
 ## How the data is sourced
 

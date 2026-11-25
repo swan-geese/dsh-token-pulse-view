@@ -21,7 +21,12 @@
  * on its two schema slots, which a pass-through satisfies without zod.
  */
 
-export const inject = ['sessionProjections']
+import { readdirSync, readFileSync } from 'node:fs'
+import { homedir } from 'node:os'
+import { join, resolve } from 'node:path'
+import { zstdDecompressSync } from 'node:zlib'
+
+export const inject = ['sessionProjections', 'webServer', 'connection']
 
 /** Schema stand-in accepted by the registry (`parse` is the only method it calls). */
 const passthrough = { parse: (value) => value }
@@ -358,7 +363,215 @@ const definition = {
   wire: { viewSchema: passthrough, view, summary: false },
 }
 
+/* ------------------------------------------------------------------ *
+ * Cross-session statistics: a read-only JSON route over the durable  *
+ * session archive. Same billing rule as the projection fold — every  *
+ * `assistant/message` / `assistant/attempt` usage record is one      *
+ * billed request — aggregated per LOCAL calendar day and per model.  *
+ * Nothing is written. The scan is cached (30 s) and capped by a      *
+ * wall-time budget, so a huge archive degrades to `partial: true`    *
+ * instead of hanging the route.                                      *
+ * ------------------------------------------------------------------ */
+
+/** Zstandard frame magic (little-endian). */
+const ZSTD_FRAME = Buffer.from([0x28, 0xb5, 0x2f, 0xfd])
+const CACHE_TTL_MS = 30_000
+const SCAN_BUDGET_MS = 4_000
+
+/**
+ * The sessions root, mirroring dsh-base's `dshHomePath('sessions')`:
+ * `$DSH_HOME` (when non-blank) else `~/.dsh`, joined with `sessions`.
+ */
+function sessionsRoot() {
+  const env = (process.env.DSH_HOME ?? '').trim()
+  return resolve(join(env !== '' ? env : join(homedir(), '.dsh'), 'sessions'))
+}
+
+/** Decompress one multi-frame zstd session log into text. */
+function decodeLog(buf) {
+  const starts = []
+  for (let i = buf.indexOf(ZSTD_FRAME); i !== -1; i = buf.indexOf(ZSTD_FRAME, i + 4)) starts.push(i)
+  let text = ''
+  for (let k = 0; k < starts.length; k += 1) {
+    const end = k + 1 < starts.length ? starts[k + 1] : buf.length
+    try {
+      text += zstdDecompressSync(buf.subarray(starts[k], end)).toString('utf8')
+    } catch {
+      // A damaged frame costs its lines only; the rest still aggregate.
+    }
+  }
+  return text
+}
+
+/** Local calendar day key for one timestamp (matches the browser rendering). */
+function dayKey(time) {
+  const d = new Date(time)
+  const pad = (v) => String(v).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+function emptyBucket() {
+  return { requests: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0, reasoning: 0 }
+}
+
+function addUsage(bucket, usage) {
+  bucket.requests += 1
+  bucket.input += usage.inputTokens
+  bucket.output += usage.outputTokens
+  bucket.cacheRead += usage.cacheReadTokens ?? 0
+  bucket.cacheWrite += usage.cacheWriteTokens ?? 0
+  bucket.reasoning += usage.reasoningTokens ?? 0
+}
+
+/** Recursively collect v4 session logs under a directory. */
+function collectLogs(dir, out) {
+  let entries
+  try {
+    entries = readdirSync(dir, { withFileTypes: true })
+  } catch {
+    return out
+  }
+  for (const entry of entries) {
+    const full = join(dir, entry.name)
+    if (entry.isDirectory()) collectLogs(full, out)
+    else if (entry.name === 'session.v4.jsonl.zstd') out.push(full)
+  }
+  return out
+}
+
+/**
+ * Aggregate every billed usage record in the session archive.
+ * @param root - the sessions directory.
+ * @param budgetMs - wall-time cap; the scan stops early and flags partial.
+ * @returns plain-JSON { days, models, sessions, scanned, partial }.
+ */
+function aggregateArchive(root, budgetMs) {
+  const deadline = Date.now() + budgetMs
+  const logs = collectLogs(root, [])
+  const days = new Map()
+  const models = new Map()
+  const sessions = []
+  let partial = false
+  for (const file of logs) {
+    if (Date.now() > deadline) { partial = true; break }
+    let buf
+    try { buf = readFileSync(file) } catch { continue }
+    if (buf.length === 0) continue
+    const text = decodeLog(buf)
+    const lines = text.split('\n')
+    let meta = null
+    try { meta = JSON.parse(lines[0] ?? '') } catch { /* header best-effort */ }
+    const session = {
+      id: typeof meta?.id === 'string' ? meta.id : file.split('/').slice(-2)[0],
+      cwd: typeof meta?.cwd === 'string' ? meta.cwd : '',
+      createdAt: typeof meta?.createdAt === 'number' ? meta.createdAt : 0,
+      requests: 0, input: 0, output: 0, cacheRead: 0, cacheWrite: 0,
+      models: new Set(),
+    }
+    let billed = false
+    for (const line of lines) {
+      if (!line.includes('"usage"')) continue
+      let event
+      try { event = JSON.parse(line) } catch { continue }
+      if (event.type !== 'assistant/message' && event.type !== 'assistant/attempt') continue
+      const usage = event.data?.usage
+      if (typeof usage?.inputTokens !== 'number' || typeof usage?.outputTokens !== 'number') continue
+      billed = true
+      const dk = dayKey(event.time ?? Date.now())
+      const day = days.get(dk) ?? emptyBucket()
+      addUsage(day, usage)
+      days.set(dk, day)
+      const source = event.data?.message?.source
+      const key = typeof source?.provider === 'string' && typeof source?.model === 'string'
+        ? `${source.provider}/${source.model}`
+        : 'unknown'
+      const model = models.get(key) ?? emptyBucket()
+      addUsage(model, usage)
+      models.set(key, model)
+      session.requests += 1
+      session.input += usage.inputTokens
+      session.output += usage.outputTokens
+      session.cacheRead += usage.cacheReadTokens ?? 0
+      session.cacheWrite += usage.cacheWriteTokens ?? 0
+      session.models.add(key)
+    }
+    if (billed) sessions.push({ ...session, models: [...session.models] })
+  }
+  const dayRows = [...days.entries()].sort((a, b) => (a[0] < b[0] ? -1 : 1))
+    .map(([day, bucket]) => ({ day, ...bucket }))
+  const modelRows = [...models.entries()].sort((a, b) =>
+    (b[1].input + b[1].cacheRead + b[1].cacheWrite + b[1].output)
+    - (a[1].input + a[1].cacheRead + a[1].cacheWrite + a[1].output))
+    .map(([model, bucket]) => ({ model, ...bucket }))
+  return { days: dayRows, models: modelRows, sessions, scanned: logs.length, partial }
+}
+
+/** Register GET /token-pulse/stats, fenced exactly like the host's own routes. */
+function registerStatsRoute(ctx) {
+  if (typeof ctx.webServer?.register !== 'function') return
+  let cache = null
+  let cachedAt = 0
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'prefix',
+    path: '/token-pulse/stats',
+    handler: async (req, res) => {
+      const send = (code, body) => {
+        res.writeHead(code, { 'Content-Type': 'application/json; charset=utf-8' })
+        res.end(JSON.stringify(body))
+      }
+      if (ctx.connection?.requestRejection?.(req) !== undefined) {
+        send(403, { ok: false, error: 'forbidden' })
+        return
+      }
+      if (req.method !== 'GET') {
+        send(405, { ok: false, error: 'method not allowed' })
+        return
+      }
+      try {
+        if (cache === null || Date.now() - cachedAt > CACHE_TTL_MS) {
+          cache = aggregateArchive(sessionsRoot(), SCAN_BUDGET_MS)
+          cachedAt = Date.now()
+        }
+        const url = new URL(req.url ?? '', 'http://local')
+        const days = Math.min(3660, Math.max(1, Number(url.searchParams.get('days')) || 3660))
+        const cutoff = new Date()
+        cutoff.setHours(0, 0, 0, 0)
+        cutoff.setDate(cutoff.getDate() - (days - 1))
+        const pad = (v) => String(v).padStart(2, '0')
+        const cutoffKey = `${cutoff.getFullYear()}-${pad(cutoff.getMonth() + 1)}-${pad(cutoff.getDate())}`
+        const window = cache.days.filter((row) => row.day >= cutoffKey)
+        const total = window.reduce((acc, row) => {
+          acc.requests += row.requests
+          acc.input += row.input
+          acc.output += row.output
+          acc.cacheRead += row.cacheRead
+          acc.cacheWrite += row.cacheWrite
+          acc.reasoning += row.reasoning
+          return acc
+        }, emptyBucket())
+        send(200, {
+          ok: true,
+          generatedAt: cachedAt,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          days,
+          partial: cache.partial,
+          scanned: cache.scanned,
+          sessions: cache.sessions.length,
+          window: { total, days: window },
+          models: cache.models,
+          top: cache.sessions.slice().sort((a, b) =>
+            (b.input + b.cacheRead + b.cacheWrite + b.output) - (a.input + a.cacheRead + a.cacheWrite + a.output))
+            .slice(0, 10),
+        })
+      } catch (error) {
+        send(500, { ok: false, error: String(error?.message ?? error) })
+      }
+    },
+  }), 'token-pulse: cross-session stats route')
+}
+
 export async function apply(ctx) {
-  // Registration belongs to this fiber; unloading the bundle removes the unit with it.
+  // Registration belongs to this fiber; unloading the bundle removes both with it.
   await ctx.sessionProjections.register(definition)
+  registerStatsRoute(ctx)
 }

@@ -1,7 +1,7 @@
 {
   "name": "dsh-token-pulse-view",
-  "version": "1.0.0",
-  "description": "Token Pulse: a premium token-usage dashboard contributed as a DSH Conversation View — per-turn flow chart, cache hit, context gauge, model attribution",
+  "version": "1.1.0",
+  "description": "Token Pulse: a premium token-usage dashboard for DSH — per-turn flow chart, cache hit, context gauge, model attribution, plus cross-session daily stats (DeepSeek-console style)",
   "type": "module",
   "exports": {
     ".": "./index.js",
